@@ -32,11 +32,16 @@ module Geocoder::US
     # dbtype option is used when your datasbase encodes it's geometry blogs according to two formats
     # the first. default, is in a series of little-endian 4-byte ints. The second is
     # | 1 byte Type | 4 byte SRID | 4 byte element count| 8 byte double coordinates. Use option value 2 for this
-    # second type
+    # second type.
+    #
+    # Options:
+    #  :debug - Boolean, defaults to false.  Controls whether debug messages are printeind to stderr
+    #  :no_city_searches - Boolean, defaulst to false.  Controls whether the geocoder will allow address searches
+    #    where the address does not specify a city/place/zip.  This can be _dangerous_ on large datasets.
     def initialize (filename, options = {})
       defaults = {:debug => false, :cache_size => 50000,
                   :helper => "sqlite3.so", :threadsafe => false,
-                  :create => false, :dbtype => 1}
+                  :create => false, :dbtype => 1, :no_city_searches => false}
       options = defaults.merge options
       raise ArgumentError, "can't find database #{filename}" \
         unless options[:create] or File.exists? filename
@@ -45,6 +50,7 @@ module Geocoder::US
       @dbtype = options[:dbtype]
       @debug = options[:debug]
       @threadsafe = options[:threadsafe]
+      @no_city_search = options[:no_city_searches]
       tune options[:helper], options[:cache_size]
     end
 
@@ -229,6 +235,17 @@ module Geocoder::US
       execute sql, *params
     end
 
+    # Query the feature and range tables for a set of ranges, given a
+    # building number, street name, and a prayer.
+    # The ZIP codes are ignored in this version.  This function is
+    # a little dangerous if you have a larger dataset. But if your
+    # set it localized and a user doesn't have a zip or city, then
+    # this will give them a result.
+    def features_by_street_only (street, tokens)
+      sql, params = features_by_street(street, tokens)
+      execute sql, *params
+    end
+
     def ranges_by_feature (fids, number, prenum)
       in_list = placeholders_for fids
       limit = 4 * fids.length
@@ -363,21 +380,28 @@ module Geocoder::US
          places = places_by_zip city, address.zip 
       end
       places = places_by_city city, address.city_parts, address.state if places.empty?
-      return [] if places.empty?
+      return [] if places.empty? and !@no_city_search
 
       address.city = unique_values places, :city
-      return places if address.street.empty?
+      return places if address.street.empty? and !@no_city_search
 
-      zips = unique_values places, :zip
-      street = address.street.sort {|a,b|a.length <=> b.length}[0]
-     # puts "street parts = #{address.street_parts.inspect}"
-      candidates = features_by_street_and_zip street, address.street_parts, zips
+      if !places.empty?
+              zips = unique_values places, :zip
+              street = address.street.sort {|a,b|a.length <=> b.length}[0]
+             # puts "street parts = #{address.street_parts.inspect}"
+              candidates = features_by_street_and_zip street, address.street_parts, zips
 
-      if candidates.empty?
-        candidates = more_features_by_street_and_zip street, address.street_parts, zips
+              if candidates.empty?
+                candidates = more_features_by_street_and_zip street, address.street_parts, zips
+              end
+
+              merge_rows! candidates, places, :zip
       end
 
-      merge_rows! candidates, places, :zip
+      if (candidates.empty? and @no_city_search)
+        candidates = features_by_street_only street, address.street_parts 
+      end
+
       candidates
     end
 
