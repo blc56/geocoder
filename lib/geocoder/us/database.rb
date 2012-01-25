@@ -400,13 +400,8 @@ module Geocoder::US
 
       if (candidates.empty? and @no_city_search)
         candidates = features_by_street_only street, address.street_parts 
+	canonicalize_places! candidates
 
-	# Now let's get all the place information back into the results
-	places = []
-        unique_values(candidates, :zip).each{ |zip|
-		places.concat places_by_zip "", zip 
-	}
-        merge_rows! candidates, places, :zip
       end
 
       candidates
