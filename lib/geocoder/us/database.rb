@@ -401,7 +401,7 @@ module Geocoder::US
       if (candidates.empty? and @no_city_search)
         candidates = features_by_street_only street, address.street_parts 
 	canonicalize_places! candidates
-
+	candidates.flatten!
       end
 
       candidates
