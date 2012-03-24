@@ -229,7 +229,7 @@ module Geocoder::US
 
       # Try a simpler case of adding the @number in case everything is an abbr.
       strings += [@number] if strings.all? {|s| Std_Abbr.key? s or Name_Abbr.key? s}
-      strings.uniq
+      strings.uniq.compact.reject(&:empty?)
     end
 
     def remove_noise_words(strings)
