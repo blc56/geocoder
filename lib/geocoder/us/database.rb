@@ -803,15 +803,19 @@ module Geocoder::US
       results = []
       start_time = Time.now if @debug
       if address.po_box? and !address.zip.empty?
+        $stderr.print "USING: geocode_place\n" if @debug
         results = geocode_place address, canonical_place
       end
       if address.intersection? and !address.street.empty? and address.number.empty?
+        $stderr.print "USING: geocode_intersection\n" if @debug
         results = geocode_intersection address, canonical_place
       end
       if results.empty? and !address.street.empty?
+        $stderr.print "USING: geocode_address\n" if @debug
         results = geocode_address address, canonical_place
       end
       if results.empty?
+        $stderr.print "USING: geocode_place\n" if @debug
         results = geocode_place address, canonical_place
       end
       if @debug
