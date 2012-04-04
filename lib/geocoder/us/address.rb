@@ -197,11 +197,16 @@ module Geocoder::US
 	# Example: 5116 LINCOLN DR, edina, mn 55436
 	# Was Geocoding to: 5116 Eden Ave, Saint Louis Park, MN 55436
 	# theduckylittle, 2012/4/4
-	@street = @street - @city
-	@city = @city - @street
+#	@street = @street - @city
+#	@city = @city - @street
       else
         @city = []
       end
+
+ #     if @street.empty?
+ #     	@street = @city
+	#@city = []
+      #end
 
       # SPECIAL CASE: no city, but a state with the same name. e.g. "New York"
       @city << @full_state if @state.downcase != @full_state.downcase

@@ -371,7 +371,16 @@ module Geocoder::US
       dest.flatten!
     end
 
-    def find_candidates (address)
+    # Get places by a bounding box, in case we get a bounding box
+    # but no city or state
+    # bbox =[minx,miny,maxx,maxy]
+
+    def places_by_bbox(bbox)
+      execute("SELECT *, priority AS city_score
+               FROM place WHERE lon >= ? and lat >= ? and lon <= ? and lat <= ? order by priority desc;", bbox[0],bbox[1],bbox[2],bbox[3])
+    end
+
+    def find_candidates (address, bbox=nil)
       places = []
       candidates = []
 
@@ -379,8 +388,13 @@ module Geocoder::US
       if(!address.zip.empty? && !address.zip.nil?)
          places = places_by_zip city, address.zip 
       end
+      $stderr.print "DOING A BBOX SEARCH #{bbox}\n"
+      if((places.empty? and bbox != nil) or @no_city_search)
+      	places = places_by_bbox(bbox)
+      end
       places = places_by_city city, address.city_parts, address.state if places.empty?
       return [] if places.empty? and !@no_city_search
+
 
       address.city = unique_values places, :city
       return places if address.street.empty? and !@no_city_search
@@ -733,8 +747,8 @@ module Geocoder::US
     # range interpolation. If canonicalize is true, attempt to return the
     # "primary" street and place names, if they are different from the ones
     # given.
-    def geocode_address (address, canonical_place=false)
-      candidates = find_candidates address
+    def geocode_address (address, canonical_place=false, bbox=nil)
+      candidates = find_candidates(address, bbox)
       return [] if candidates.empty?
       return best_places(address, candidates, canonical_place) if candidates[0][:street].nil?
 
@@ -796,9 +810,12 @@ module Geocoder::US
     #   the approximate "goodness" of the candidate match.
     # * The other values in the hash will represent various structured
     #   components of the address and place name.
-    def geocode (info_to_geocode, canonical_place=false)
+    def geocode (info_to_geocode, canonical_place=false, bbox=nil)
       address = Address.new info_to_geocode
       $stderr.print "ADDR: #{address.inspect}\n" if @debug
+      if(bbox!=nil and @debug)
+      	$stderr.print "ADDR BBOX: #{bbox}\n"
+      end
       return [] if address.city.empty? and address.zip.empty?
       results = []
       start_time = Time.now if @debug
@@ -811,8 +828,8 @@ module Geocoder::US
         results = geocode_intersection address, canonical_place
       end
       if results.empty? and !address.street.empty?
-        $stderr.print "USING: geocode_address\n" if @debug
-        results = geocode_address address, canonical_place
+        $stderr.print "USING: geocode_address #{bbox} \n" if @debug
+        results = geocode_address address, canonical_place, bbox
       end
       if results.empty?
         $stderr.print "USING: geocode_place\n" if @debug
