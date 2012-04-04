@@ -192,6 +192,13 @@ module Geocoder::US
         @city |= add
         @city.map! {|s| s.downcase}
         @city.uniq!
+	# I know the parser is not perfect but this keeps the 
+	# oil out of the water.
+	# Example: 5116 LINCOLN DR, edina, mn 55436
+	# Was Geocoding to: 5116 Eden Ave, Saint Louis Park, MN 55436
+	# theduckylittle, 2012/4/4
+	@street = @street - @city
+	@city = @city - @street
       else
         @city = []
       end
