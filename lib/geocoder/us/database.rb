@@ -388,7 +388,6 @@ module Geocoder::US
       if(!address.zip.empty? && !address.zip.nil?)
          places = places_by_zip city, address.zip 
       end
-      $stderr.print "DOING A BBOX SEARCH #{bbox}\n"
       if((places.empty? and bbox != nil) or @no_city_search)
       	places = places_by_bbox(bbox)
       end
