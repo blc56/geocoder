@@ -36,7 +36,7 @@ module Geocoder::US
     #
     # Options:
     #  :debug - Boolean, defaults to false.  Controls whether debug messages are printeind to stderr
-    #  :no_city_searches - Boolean, defaulst to false.  Controls whether the geocoder will allow address searches
+    #  :no_city_searches - Boolean, defaults to false.  Controls whether the geocoder will allow address searches
     #    where the address does not specify a city/place/zip.  This can be _dangerous_ on large datasets.
     def initialize (filename, options = {})
       defaults = {:debug => false, :cache_size => 50000,
@@ -388,7 +388,7 @@ module Geocoder::US
       if(!address.zip.empty? && !address.zip.nil?)
          places = places_by_zip city, address.zip 
       end
-      if((places.empty? and bbox != nil) or @no_city_search)
+      if((places.empty? and bbox != nil) and @no_city_search)
       	places = places_by_bbox(bbox)
       end
       places = places_by_city city, address.city_parts, address.state if places.empty?
@@ -400,7 +400,17 @@ module Geocoder::US
 
       if !places.empty?
               zips = unique_values places, :zip
-              street = address.street.sort {|a,b|a.length <=> b.length}[0]
+              street = address.street #.sort {|a,b|a.length <=> b.length}[0]
+	      # this ensures that the "city" is at the end of the priority list.
+	      street.delete(address.city) if address.city
+	      # but if the city name == the street name then we may have clobbered
+	      # all the useful bits, so we'll add it back in.
+	      if(street.empty?)
+	      	street.push address.city
+	      end
+	      # pick the first one, this was what was done in the old code.
+	      street = street[0]
+
              # puts "street parts = #{address.street_parts.inspect}"
               candidates = features_by_street_and_zip street, address.street_parts, zips
 
