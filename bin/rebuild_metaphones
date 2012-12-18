@@ -25,8 +25,12 @@ end
       end
       func.result = mph[0...len.to_i]
     end
+
     sql = "update place set city_phone = metaphone(city,5)"
-    
     @db.execute sql
+
+    sql = "update feature set street_phone = metaphone(street,5)"
+    @db.execute sql
+
     
     @db.close
