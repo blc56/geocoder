@@ -18,5 +18,5 @@ DATABASE=${OLD_DB}.$$
   cat ${SQL}/cluster.sql && \
   echo "DETACH DATABASE old;" && \
   cat ${SQL}/index.sql && \
-  echo "ANALYZE;" ) | sqlite3 $DATABASE \
+  echo "VACUUM ANALYZE;" ) | sqlite3 $DATABASE \
   && mv $DATABASE $OLD_DB

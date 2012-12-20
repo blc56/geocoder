@@ -215,6 +215,7 @@ module Geocoder::US
       sql, params = features_by_street(street, tokens)
       in_list = placeholders_for zips
       sql    += " AND feature.zip IN (#{in_list})"
+      sql += " order by street_score desc limit 100"
       params += zips
       execute sql, *params
     end
@@ -230,6 +231,7 @@ module Geocoder::US
         zip3s = zips.map {|z| z[0..2]+'%'}.to_set.to_a
         like_list = zip3s.map {|z| "feature.zip LIKE ?"}.join(" OR ")
         sql += " AND (#{like_list})"
+        sql += " order by street_score desc limit 100"
         params += zip3s
       end
       execute sql, *params
@@ -243,6 +245,7 @@ module Geocoder::US
     # this will give them a result.
     def features_by_street_only (street, tokens)
       sql, params = features_by_street(street, tokens)
+      sql += " order by street_score desc limit 100"
       execute sql, *params
     end
 

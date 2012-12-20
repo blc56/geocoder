@@ -60,7 +60,9 @@ INSERT INTO feature
 --   a simple compression on the WKB geometry (because they're all
 --   linestrings).
 INSERT OR IGNORE INTO edge
-    SELECT l.tlid, compress_wkb_line(the_geom) FROM
+    --SELECT l.tlid, compress_wkb_line(the_geom) FROM
+    -- Removed the haphazard compression, Duck 12/19/2012, i'd rather have stuff look normal.
+    SELECT l.tlid, the_geom FROM
         (SELECT DISTINCT tlid FROM linezip) AS l, tiger_edges e
         WHERE l.tlid=e.tlid AND fullname <> "" AND fullname IS NOT NULL;
 
