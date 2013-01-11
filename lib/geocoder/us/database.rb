@@ -415,10 +415,10 @@ module Geocoder::US
 	      street = street[0]
 
              # puts "street parts = #{address.street_parts.inspect}"
-              candidates = features_by_street_and_zip street, address.street_parts, zips
+              candidates = features_by_street_and_zip street, [street,] + address.street_parts, zips
 
               if candidates.empty?
-                candidates = more_features_by_street_and_zip street, address.street_parts, zips
+                candidates = more_features_by_street_and_zip street, [street,] + address.street_parts, zips
               end
 
               merge_rows! candidates, places, :zip
