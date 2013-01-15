@@ -197,13 +197,18 @@ module Geocoder::US
     # tables for a street name and optional building number. The SQL is
     # used by candidate_records and more_candidate_records to filter results
     # by ZIP code.
-    def features_by_street (street, tokens)
+    def features_by_street (street, tokens,exact=false)
       metaphones = (["metaphone(?,5)"] * tokens.length).join(",")
       sql = "
         SELECT feature.*, levenshtein(?, street) AS street_score
-          FROM feature
-          WHERE street_phone IN (#{metaphones})"
-      params = [street] + tokens
+          FROM feature"
+	if exact 
+	  sql += " WHERE street = upper('#{street}') "
+	  params = [street,]
+	else
+          sql += " WHERE street_phone IN (#{metaphones}) " 
+          params = [street] + tokens
+	end
       return [sql, params]
     end
 
@@ -211,8 +216,8 @@ module Geocoder::US
     # building number, street name, and list of candidate ZIP codes.
     # The metaphone and ZIP code indexes on the feature table are
     # used to match results.
-    def features_by_street_and_zip (street, tokens, zips)
-      sql, params = features_by_street(street, tokens)
+    def features_by_street_and_zip (street, tokens, zips,exactStreet=false)
+      sql, params = features_by_street(street, tokens, exactStreet)
       in_list = placeholders_for zips
       sql    += " AND feature.zip IN (#{in_list})"
       sql += " order by street_score desc limit 100"
@@ -415,7 +420,12 @@ module Geocoder::US
 	      street = street[0]
 
              # puts "street parts = #{address.street_parts.inspect}"
-              candidates = features_by_street_and_zip street, [street,] + address.street_parts, zips
+
+	      	# Then the metaphone based one
+               candidates = features_by_street_and_zip street, [street,] + address.street_parts, zips, true
+              if candidates.empty?
+              candidates = features_by_street_and_zip street, [street,] + address.street_parts, zips, false
+	      end
 
               if candidates.empty?
                 candidates = more_features_by_street_and_zip street, [street,] + address.street_parts, zips
