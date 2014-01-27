@@ -207,6 +207,13 @@ module Geocoder::US
 	  params = [street,]
 	else
           sql += " WHERE street_phone IN (#{metaphones}) " 
+          #actually, I disabled the metaphone search, but this is another option.
+          #BLC: require first to characters of the street to match
+          #in an attempt to avoid incorrect pre-directional matches
+          # refs #1546
+#sql += " AND substr(street, 0, 2) = substr('#{street}', 0, 2) "
+          #same for post-directionals
+#sql += " AND substr(street, length(street)-2, 2) = substr('#{street}', length('#{street}')-2, 2) "
           params = [street] + tokens
 	end
       return [sql, params]
@@ -423,13 +430,12 @@ module Geocoder::US
 
 	      	# Then the metaphone based one
                candidates = features_by_street_and_zip street, [street,] + address.street_parts, zips, true
-              if candidates.empty?
-              candidates = features_by_street_and_zip street, [street,] + address.street_parts, zips, false
-	      end
-
-              if candidates.empty?
-                candidates = more_features_by_street_and_zip street, [street,] + address.street_parts, zips
-              end
+#if candidates.empty?
+#candidates = features_by_street_and_zip street, [street,] + address.street_parts, zips, false
+#end
+#if candidates.empty?
+#candidates = more_features_by_street_and_zip street, [street,] + address.street_parts, zips
+#end
 
               merge_rows! candidates, places, :zip
       end
