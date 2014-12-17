@@ -211,10 +211,10 @@ module Geocoder::US
           #BLC: require first to characters of the street to match
           #in an attempt to avoid incorrect pre-directional matches
           # refs #1546
-          sql += " AND substr(street, 0, 2) = substr('#{street}', 0, 2) "
+          sql += " AND substr(street, 0, 2) = substr(?, 0, 2) "
           #same for post-directionals
-          sql += " AND substr(street, length(street)-2, 2) = substr('#{street}', length('#{street}')-2, 2) "
-          params = [street] + tokens
+          sql += " AND substr(street, length(street)-2, 2) = substr(?, length(?)-2, 2) "
+          params = [street,] + tokens + [street, street, street]
 	end
       return [sql, params]
     end
