@@ -208,12 +208,11 @@ module Geocoder::US
 	else
           sql += " WHERE street_phone IN (#{metaphones}) " 
           #actually, I disabled the metaphone search, but this is another option.
-          #BLC: require first to characters of the street to match
+          #BLC: require first few characters of the street to match
           #in an attempt to avoid incorrect pre-directional matches
           # refs #1546
-          sql += " AND substr(street, 0, 2) = substr(?, 0, 2) "
           #same for post-directionals
-          sql += " AND substr(street, length(street)-2, 2) = substr(?, length(?)-2, 2) "
+          sql += " AND (substr(street, 0, 1) = substr(?, 0, 1) OR substr(street, length(street)-1, 1) = substr(?, length(?)-1, 1) ) "
           params = [street,] + tokens + [street, street, street]
 	end
       return [sql, params]
